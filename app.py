@@ -50,10 +50,12 @@ def regression_app(model: str):
     if model == 'Bayesian Linear Regression':
         cls_ = bs.linear.Regression
         st.sidebar.subheader('Hyperparameters')
+        alphas = np.logspace(-5, 0, 100).tolist()
+        betas = np.logspace(-1, 4, 100).tolist()
         model = cls_(
             feature,
-            st.sidebar.slider('Alpha', 0.01, 1., value=0.1),
-            st.sidebar.slider('Beta', 1., 100., value=10.))
+            st.sidebar.select_slider('Alpha', alphas, alphas[50]),
+            st.sidebar.select_slider('Beta', betas, betas[50]))
     st.markdown(cls_.__doc__)
     width = 600
     height = 400
