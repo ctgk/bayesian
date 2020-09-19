@@ -1,21 +1,18 @@
-# Python-boilerplate
+# Bayesian Playgrounnd
 
-TODO: short introduction of this project. The objective or the motivation
-behind this project.
+Interacive playground of Bayesian models.
 
-# Getting Started
+# How to run this app
 
-1. Installation process
-1. Software dependencies
-1. Latest releases
-1. API references
-
-# Build and Test
+```
+pip install git+https://github.com/ctgk/bayesian_playground[app]
+streamlit run https://raw.githubusercontent.com/ctgk/bayesian_playground/master/app.py
+```
 
 # Contribute
 
 ```bash
-$ git clone ...
-$ cd ...
+$ git clone https://github.com/ctgk/bayesian_playground
+$ cd bayesian_playground
 $ pre-commit install
 ```
