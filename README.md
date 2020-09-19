@@ -5,8 +5,8 @@ Interacive playground of Bayesian models.
 # How to run this app
 
 ```
-pip install git+https://github.com/ctgk/bayesian_playground[app]
-streamlit run https://raw.githubusercontent.com/ctgk/bayesian_playground/master/app.py
+$ pip install git+https://github.com/ctgk/bayesian_playground#egg=bayesian_playground[app]
+$ streamlit run https://raw.githubusercontent.com/ctgk/bayesian_playground/master/app.py
 ```
 
 # Contribute

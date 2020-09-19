@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 __version__ = '0.0.1'
@@ -28,6 +28,8 @@ setup(
     author_email='r1135nj54w@gmail.com',
     description='Bayesian models',
 
+    packages=find_packages(
+        exclude=('tests', 'tests.*'), include=('bayesian', 'bayesian.*')),
     python_requires='>=3',
     install_requires=install_requires,
     extras_require={
