@@ -8,7 +8,11 @@ import bayesian as bs
 
 TASK_TO_MODELS = {
     '-': ('-',),
-    'Regression': ('-', 'Bayesian Linear Regression',),
+    'Regression': (
+        '-',
+        'Bayesian Linear Regression',
+        'Variational Bayesian Linear Regression'
+    ),
 }
 
 
@@ -38,36 +42,52 @@ def select_feature():
     elif feature == 'Sigmoid':
         num_locs = st.sidebar.slider('Number of sigmoid kernels', 1, 100, 10)
         scale = st.sidebar.slider('Scale of sigmoid kernels', 0.01, 10., 1.)
-        return bs.preprocess.SigmoidalFeature(
+        return bs.preprocess.SigmoidalFeatures(
             np.linspace(-1, 1, 2 * num_locs + 1)[1::2], scale)
+
+
+def create_blr():
+    st.markdown(bs.linear.Regression.__doc__)
+    feature = select_feature()
+    st.sidebar.subheader('Hyperparameters')
+    alphas = np.logspace(-5, 0, 100).tolist()
+    betas = np.logspace(-1, 4, 100).tolist()
+    return bs.linear.Regression(
+        alpha=st.sidebar.select_slider('alpha', alphas, alphas[50]),
+        beta=st.sidebar.select_slider('beta', betas, betas[50]),
+        feature=feature)
+
+
+def create_vblr():
+    st.markdown(bs.linear.Regression.__doc__)
+    feature = select_feature()
+    st.sidebar.subheader('Hyperparameters')
+    a0s = np.logspace(-3, 2, 100).tolist()
+    b0s = np.logspace(-3, 2, 100).tolist()
+    betas = np.logspace(-1, 4, 100).tolist()
+    return bs.linear.VariationalRegression(
+        a0=st.sidebar.select_slider('a0', a0s, a0s[50]),
+        b0=st.sidebar.select_slider('b0', b0s, b0s[50]),
+        beta=st.sidebar.select_slider('beta', betas, betas[50]),
+        feature=feature)
 
 
 def regression_app(model: str):
     action = st.sidebar.selectbox('Action:', (
         'Click on the canvas to add data points',
         'Double click points to delete them',))
-    feature = select_feature()
     if model == 'Bayesian Linear Regression':
-        cls_ = bs.linear.Regression
-        st.sidebar.subheader('Hyperparameters')
-        alphas = np.logspace(-5, 0, 100).tolist()
-        betas = np.logspace(-1, 4, 100).tolist()
-        model = cls_(
-            feature,
-            st.sidebar.select_slider('Alpha', alphas, alphas[50]),
-            st.sidebar.select_slider('Beta', betas, betas[50]))
-    st.markdown(cls_.__doc__)
+        model = create_blr()
+    elif model == 'Variational Bayesian Linear Regression':
+        model = create_vblr()
+    else:
+        st.error('Not Implemented Error')
     width = 600
     height = 400
     canvas = st_canvas(
-        stroke_width=10,
-        stroke_color='blue',
-        background_color='lightgray',
-        update_streamlit=True,
+        stroke_width=10, stroke_color='blue', background_color='lightgray',
         drawing_mode='circle' if 'add' in action else 'transform',
-        width=width,
-        height=height,
-        key='canvas',
+        update_streamlit=True, width=width, height=height, key='canvas',
     )
     circles = [
         obj for obj in canvas.json_data['objects'] if obj['type'] == 'circle']

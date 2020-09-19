@@ -50,21 +50,29 @@ class Regression(object):
     $$
     """
 
-    def __init__(self, feature, alpha: float, beta: float):
+    def __init__(self, alpha: float, beta: float, feature=None):
         super().__init__()
-        self.feature = feature
         self.alpha = alpha
         self.beta = beta
+        self.feature = feature
+
+    def _preprocess(self, x):
+        if self.feature is None:
+            x = np.asarray(x)
+            if x.ndim == 1:
+                x = x[:, None]
+            return x
+        return self.feature.transform(x)
 
     def fit(self, x, y):
-        x = self.feature.transform(x)
+        x = self._preprocess(x)
         y = np.asarray(y)
         self.w_cov = np.linalg.inv(
             np.eye(self.feature.ndim) * self.alpha + self.beta * x.T @ x)
         self.w_mean = self.beta * self.w_cov @ x.T @ y
 
     def predict(self, x):
-        x = self.feature.transform(x)
+        x = self._preprocess(x)
         y = x @ self.w_mean
         y_var = 1 / self.beta + np.sum(x @ self.w_cov * x, axis=1)
         y_std = np.sqrt(y_var)
