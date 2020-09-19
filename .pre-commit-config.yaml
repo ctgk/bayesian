@@ -29,8 +29,3 @@ repos:
         language: python
         entry: pytest --doctest-modules
         pass_filenames: false
-    -   id: documentation
-        name: Generate document
-        language: system
-        entry: bash -c 'sphinx-apidoc ./pyboilerplate -o ./docs/api --force; sphinx-build ./docs ./build/html -b html -W'
-        pass_filenames: false
