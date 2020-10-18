@@ -1,3 +1,7 @@
+import io
+from PIL import Image
+
+from matplotlib.backends.backend_agg import RendererAgg
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
@@ -16,6 +20,42 @@ TASK_TO_MODELS = {
 }
 
 
+def get_fig_ax():
+    plt.tight_layout()
+    fig, ax = plt.subplots(
+        subplot_kw={'xlim': (-1, 1), 'ylim': (-1, 1)})
+    ax.grid(alpha=0.5)
+    ax.tick_params(
+        axis='x', which='both', bottom=False, top=False,
+        labelbottom=False)
+    ax.tick_params(
+        axis='y', which='both', left=False, right=False,
+        labelleft=False)
+    return fig, ax
+
+
+def figure_to_img(fig):
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=180, bbox_inches='tight', pad_inches=0)
+    buf.seek(0)
+    return Image.open(buf)
+
+
+@st.cache(allow_output_mutation=True)
+def get_background():
+    return [None]
+
+
+@st.cache(allow_output_mutation=True)
+def get_model():
+    return [None]
+
+
+@st.cache(allow_output_mutation=True)
+def get_cache():
+    return {'x': None, 'y': None, 'model': None, 'bg': None}
+
+
 def main_app():
     st.sidebar.info('Select a task and a model above.')
     st.title('Welcom to Bayesian model playground!')
@@ -26,24 +66,29 @@ def main_app():
 
 def select_feature():
     st.sidebar.subheader('Feature')
-    feature = st.sidebar.selectbox('Feature Type:', (
-        'Gaussian', 'Polynomial', 'Sigmoid'))
-    if feature == 'Polynomial':
-        use_nth_deg = [
-            st.sidebar.checkbox(f'x^{i}', value=True) for i in range(10)]
-        if any(use_nth_deg) is False:
-            st.sidebar.error('Please choose at least one feature above.')
-        return bs.preprocess.PolynomialFeatures(use_nth_deg)
-    elif feature == 'Gaussian':
+    features = []
+    if st.sidebar.checkbox('Bias', value=True):
+        features.append(bs.preprocess.BiasFeature())
+    if st.sidebar.checkbox('Gaussian', value=True):
         num_locs = st.sidebar.slider('Number of Gaussian kernels', 1, 100, 10)
         scale = st.sidebar.slider('Scale of Gaussian kernels', 0.01, 10., 1.)
-        return bs.preprocess.GaussianFeatures(
-            np.linspace(-1, 1, 2 * num_locs + 1)[1::2], scale)
-    elif feature == 'Sigmoid':
+        features.extend([
+            bs.preprocess.GaussianFeature([loc], scale) for loc
+            in np.linspace(-1, 1, 2 * num_locs + 1)[1::2]
+        ])
+    if st.sidebar.checkbox('Sigmoid', value=False):
         num_locs = st.sidebar.slider('Number of sigmoid kernels', 1, 100, 10)
         scale = st.sidebar.slider('Scale of sigmoid kernels', 0.01, 10., 1.)
-        return bs.preprocess.SigmoidalFeatures(
-            np.linspace(-1, 1, 2 * num_locs + 1)[1::2], scale)
+        features.extend([
+            bs.preprocess.SigmoidalFeature([loc], scale) for loc
+            in np.linspace(-1, 1, 2 * num_locs + 1)[1::2]
+        ])
+    if st.sidebar.checkbox('Polynomial', value=False):
+        degrees = st.sidebar.multiselect(
+            'Degrees', [f'x^{i}' for i in range(1, 10)], default=['x^1'])
+        features.extend([
+            bs.preprocess.PolynomialFeature(int(deg[2])) for deg in degrees])
+    return bs.preprocess.StackedFeatures(*features)
 
 
 def create_blr():
@@ -84,25 +129,42 @@ def regression_app(model: str):
         st.error('Not Implemented Error')
     width = 600
     height = 400
-    canvas = st_canvas(
-        stroke_width=10, stroke_color='blue', background_color='lightgray',
-        drawing_mode='circle' if 'add' in action else 'transform',
-        update_streamlit=True, width=width, height=height, key='canvas',
-    )
-    circles = [
+
+    placeholder = st.empty()
+    with placeholder.beta_container():
+        bg = get_background()
+        if bg[0] is None:
+            with RendererAgg.lock:
+                fig, ax = get_fig_ax()
+                bg[0] = figure_to_img(fig)
+                plt.clf()
+        canvas = st_canvas(
+            stroke_width=10, stroke_color='blue', background_image=bg[0],
+            drawing_mode='circle' if 'add' in action else 'transform',
+            update_streamlit=True, width=width, height=height, key='canvas')
+    dataset = [
         obj for obj in canvas.json_data['objects'] if obj['type'] == 'circle']
-    if len(circles) > 0:
-        x_train = [2 * obj['left'] / width - 1 for obj in circles]
-        y_train = [1 - 2 * obj['top'] / height for obj in circles]
-        fig, ax = plt.subplots(subplot_kw={'xlim': (-1, 1), 'ylim': (-1, 1)})
-        model.fit(x_train, y_train)
-        x = np.linspace(-1, 1, 100)
-        y, y_std = model.predict(x)
-        ax.plot(x, y, c='C1')
-        ax.fill_between(x, y - y_std, y + y_std, color='C1', alpha=0.2)
-        ax.scatter(x_train, y_train, c='C0')
-        ax.grid(alpha=0.5)
-        st.pyplot(fig)
+    x_train = [2 * obj['left'] / width - 1 for obj in dataset]
+    y_train = [1 - 2 * obj['top'] / height for obj in dataset]
+    cache = get_cache()
+    if ((cache['model'] != model)
+            or (cache['x'] != x_train)
+            or (cache['y'] != y_train)):
+        cache['x'] = x_train
+        cache['y'] = y_train
+        cache['model'] = model
+        with RendererAgg.lock:
+            fig, ax = get_fig_ax()
+            if len(dataset) > 0:
+                model.fit(x_train, y_train)
+                cache['model'] = model
+                x = np.linspace(-1, 1, 100)
+                y, y_std = model.predict(x)
+                ax.plot(x, y, c='C1')
+                ax.fill_between(x, y - y_std, y + y_std, color='C1', alpha=0.2)
+            bg[0] = figure_to_img(fig)
+            plt.clf()
+        st.experimental_rerun()
 
 
 if __name__ == "__main__":

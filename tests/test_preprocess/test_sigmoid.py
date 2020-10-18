@@ -1,18 +1,21 @@
-import numpy as np
 import pytest
 
-from bayesian.preprocess import SigmoidalFeatures
+from bayesian.preprocess import SigmoidalFeature
 
 
 def test_init():
-    feature = SigmoidalFeatures([-1, 0, 1], 1)
-    assert feature.ndim == 4
+    SigmoidalFeature([-1, 0, 1], 1)
 
 
-def test_transform():
-    feature = SigmoidalFeatures(np.random.rand(5), 1)
-    actual = feature.transform(np.random.rand(10))
-    assert actual.shape == (10, 6)
+@pytest.mark.parametrize('f1, f2, expected', [
+    (SigmoidalFeature([1, 2], 0.3), SigmoidalFeature([1, 2], 0.3), True),
+    (SigmoidalFeature([1, 2], 0.3), SigmoidalFeature([1, 2], 0.2), False),
+    (SigmoidalFeature([1, 2], 0.3), SigmoidalFeature([3, 2], 0.3), False),
+    (SigmoidalFeature([1, 2], 0.3), SigmoidalFeature([1], 0.3), False),
+])
+def test_eq(f1, f2, expected):
+    assert (f1 == f2) == expected
+    assert (f1 != f2) != expected
 
 
 if __name__ == "__main__":

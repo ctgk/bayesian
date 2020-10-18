@@ -1,7 +1,9 @@
 import numpy as np
 
+from bayesian._model import Model
 
-class Regression(object):
+
+class Regression(Model):
     r"""
     # Bayesian Linear Regression
 
@@ -50,26 +52,27 @@ class Regression(object):
     $$
     """
 
-    def __init__(self, alpha: float, beta: float, feature=None):
+    def __init__(
+            self, alpha: float, beta: float, bias: bool = True, feature=None):
         super().__init__()
         self.alpha = alpha
         self.beta = beta
         self.feature = feature
+        self.hyperparameters = [alpha, beta]
 
-    def _preprocess(self, x):
-        if self.feature is None:
-            x = np.asarray(x)
-            if x.ndim == 1:
-                x = x[:, None]
-            return x
-        return self.feature.transform(x)
+    def __eq__(self, other):
+        if not isinstance(other, Regression):
+            return False
+        return (self.hyperparameters == other.hyperparameters) and (
+            self.feature == other.feature)
 
     def fit(self, x, y):
         x = self._preprocess(x)
         y = np.asarray(y)
         self.w_cov = np.linalg.inv(
-            np.eye(self.feature.ndim) * self.alpha + self.beta * x.T @ x)
+            np.eye(np.size(x, -1)) * self.alpha + self.beta * x.T @ x)
         self.w_mean = self.beta * self.w_cov @ x.T @ y
+        self.w = {'mean': self.w_mean, 'cov': self.w_cov}
 
     def predict(self, x):
         x = self._preprocess(x)
