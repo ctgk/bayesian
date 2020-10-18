@@ -1,18 +1,18 @@
-# Bayesian Playgrounnd
+# Bayesian Inference
 
-Interacive playground of Bayesian models.
+Collection of Bayesian inference methods
 
-# How to run this app
+# Running App
 
 ```
-$ pip install git+https://github.com/ctgk/bayesian_playground#egg=bayesian_playground[app]
-$ streamlit run https://raw.githubusercontent.com/ctgk/bayesian_playground/master/app.py
+$ pip install git+https://github.com/ctgk/bayesian#egg=bayesian[app]
+$ streamlit run https://raw.githubusercontent.com/ctgk/bayesian/master/app.py
 ```
 
-# Contribute
+# Contributing
 
 ```bash
-$ git clone https://github.com/ctgk/bayesian_playground
-$ cd bayesian_playground
+$ git clone https://github.com/ctgk/bayesian
+$ cd bayesian
 $ pre-commit install
 ```

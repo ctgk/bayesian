@@ -1,24 +1,20 @@
-import numpy as np
 import pytest
 
-from bayesian.preprocess import PolynomialFeatures
+from bayesian.preprocess import PolynomialFeature
 
 
 def test_init():
-    feature = PolynomialFeatures([True, True, False, True])
-    assert feature.ndim == 3
+    PolynomialFeature(1)
 
 
-def test_transform():
-    feature = PolynomialFeatures([True, True, True])
-    actual = feature.transform([
-        [2, -3],
-        [3, 4],
-    ])
-    assert np.allclose(actual, [
-        [1, 2, -3, 4, 9],
-        [1, 3, 4, 9, 16],
-    ])
+@pytest.mark.parametrize('f1, f2, expected', [
+    (PolynomialFeature(2), PolynomialFeature(2), True),
+    (PolynomialFeature(2), PolynomialFeature(1), False),
+    (PolynomialFeature(2), PolynomialFeature(3), False),
+])
+def test_eq(f1, f2, expected):
+    assert (f1 == f2) is expected
+    assert (f1 != f2) is not expected
 
 
 if __name__ == "__main__":

@@ -1,12 +1,17 @@
-from bayesian.preprocess._gaussian import GaussianFeatures
-from bayesian.preprocess._polynomial import PolynomialFeatures
-from bayesian.preprocess._sigmoid import SigmoidalFeatures
+from bayesian.preprocess._bias import BiasFeature
+from bayesian.preprocess._feature import Feature, StackedFeatures
+from bayesian.preprocess._gaussian import GaussianFeature
+from bayesian.preprocess._polynomial import PolynomialFeature
+from bayesian.preprocess._sigmoid import SigmoidalFeature
 
 
 _classes = [
-    GaussianFeatures,
-    PolynomialFeatures,
-    SigmoidalFeatures,
+    BiasFeature,
+    Feature,
+    GaussianFeature,
+    PolynomialFeature,
+    SigmoidalFeature,
+    StackedFeatures,
 ]
 
 
