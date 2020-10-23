@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from bayesian.preprocess import GaussianFeature
@@ -16,6 +17,19 @@ def test_init():
 def test_eq(f1, f2, expected):
     assert (f1 == f2) == expected
     assert (f1 != f2) != expected
+
+
+@pytest.mark.parametrize('loc, scale, x, expected', [
+    (
+        [1, -1], 1.,
+        [[-1, -1], [-1, 1], [1, -1], [1, 1]],
+        [[np.exp(-2)], [np.exp(-4)], [1.], [np.exp(-2)]],
+    ),
+])
+def test_transform(loc, scale, x, expected):
+    feature = GaussianFeature(loc, scale)
+    actual = feature.transform(x)
+    assert np.allclose(actual, expected)
 
 
 if __name__ == "__main__":

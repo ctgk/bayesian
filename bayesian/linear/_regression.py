@@ -52,8 +52,7 @@ class Regression(Model):
     $$
     """
 
-    def __init__(
-            self, alpha: float, beta: float, bias: bool = True, feature=None):
+    def __init__(self, alpha: float, beta: float, feature=None):
         super().__init__()
         self.alpha = alpha
         self.beta = beta
@@ -69,14 +68,14 @@ class Regression(Model):
     def fit(self, x, y):
         x = self._preprocess(x)
         y = np.asarray(y)
-        self.w_cov = np.linalg.inv(
-            np.eye(np.size(x, -1)) * self.alpha + self.beta * x.T @ x)
-        self.w_mean = self.beta * self.w_cov @ x.T @ y
-        self.w = {'mean': self.w_mean, 'cov': self.w_cov}
+        self.w_precision = np.eye(
+            np.size(x, -1)) * self.alpha + self.beta * x.T @ x
+        self.w_mean = self.beta * np.linalg.solve(self.w_precision, x.T @ y)
 
     def predict(self, x):
         x = self._preprocess(x)
         y = x @ self.w_mean
-        y_var = 1 / self.beta + np.sum(x @ self.w_cov * x, axis=1)
+        y_var = 1 / self.beta + np.sum(
+            x * np.linalg.solve(self.w_precision, x.T).T, axis=1)
         y_std = np.sqrt(y_var)
         return y, y_std

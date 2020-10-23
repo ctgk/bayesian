@@ -23,5 +23,5 @@ class GaussianFeature(Feature):
         x = np.asarray(x)
         if x.ndim == 1:
             x = x[:, None]
-        return np.exp(-0.5 * np.square((x - self.loc).sum(
-            axis=-1, keepdims=True)) / self.var)
+        return np.exp(-0.5 * np.square(x - self.loc).sum(
+            axis=-1, keepdims=True) / self.var)

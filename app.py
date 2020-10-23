@@ -1,15 +1,18 @@
 import io
-from PIL import Image
+from itertools import product
 
 from matplotlib.backends.backend_agg import RendererAgg
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 
 import bayesian as bs
 
 
+WIDTH = 400
+HEIGHT = 400
 TASK_TO_MODELS = {
     '-': ('-',),
     'Regression': (
@@ -17,6 +20,10 @@ TASK_TO_MODELS = {
         'Bayesian Linear Regression',
         'Variational Bayesian Linear Regression'
     ),
+    'Classification': (
+        '-',
+        'Bayesian Logistic Regression',
+    )
 }
 
 
@@ -47,13 +54,8 @@ def get_background():
 
 
 @st.cache(allow_output_mutation=True)
-def get_model():
-    return [None]
-
-
-@st.cache(allow_output_mutation=True)
 def get_cache():
-    return {'x': None, 'y': None, 'model': None, 'bg': None}
+    return {'x': None, 'y': None, 'model': None}
 
 
 def main_app():
@@ -91,7 +93,31 @@ def select_feature():
     return bs.preprocess.StackedFeatures(*features)
 
 
-def create_blr():
+def select_feature_for_classification():
+    st.sidebar.subheader('Feature')
+    features = []
+    if st.sidebar.checkbox('Bias', value=True):
+        features.append(bs.preprocess.BiasFeature())
+    if st.sidebar.checkbox('Gaussian', value=True):
+        n = st.sidebar.slider('Number of Gaussian kernels per axis', 1, 20, 10)
+        scale = st.sidebar.slider('Scale of Gaussian kernels', 0.01, 10., 1.)
+        features.extend([
+            bs.preprocess.GaussianFeature([x1, x2], scale) for x1, x2
+            in product(
+                np.linspace(-1, 1, 2 * n + 1)[1::2],
+                np.linspace(-1, 1, 2 * n + 1)[1::2])
+        ])
+    if st.sidebar.checkbox('Polynomial', value=False):
+        degrees = st.sidebar.multiselect(
+            'Degrees', [f'x^{i}' for i in range(1, 10)], default=['x^1'])
+        features.extend([
+            bs.preprocess.PolynomialFeature(int(deg[2])) for deg in degrees])
+    if len(features) == 0:
+        st.sidebar.error('Select at least one feature')
+    return bs.preprocess.StackedFeatures(*features)
+
+
+def bayesian_linear_regression():
     st.markdown(bs.linear.Regression.__doc__)
     feature = select_feature()
     st.sidebar.subheader('Hyperparameters')
@@ -103,8 +129,8 @@ def create_blr():
         feature=feature)
 
 
-def create_vblr():
-    st.markdown(bs.linear.Regression.__doc__)
+def variational_bayesian_linear_regression():
+    st.markdown(bs.linear.VariationalRegression.__doc__)
     feature = select_feature()
     st.sidebar.subheader('Hyperparameters')
     a0s = np.logspace(-3, 2, 100).tolist()
@@ -117,18 +143,24 @@ def create_vblr():
         feature=feature)
 
 
+def bayesian_logistic_regression():
+    st.markdown(bs.linear.Classifier.__doc__)
+    feature = select_feature_for_classification()
+    alphas = np.logspace(-5, 0, 100).tolist()
+    return bs.linear.Classifier(
+        alpha=st.sidebar.select_slider('alpha', alphas, alphas[50]),
+        feature=feature)
+
+
 def regression_app(model: str):
     action = st.sidebar.selectbox('Action:', (
         'Click on the canvas to add data points',
         'Double click points to delete them',))
-    if model == 'Bayesian Linear Regression':
-        model = create_blr()
-    elif model == 'Variational Bayesian Linear Regression':
-        model = create_vblr()
-    else:
-        st.error('Not Implemented Error')
-    width = 600
-    height = 400
+    try:
+        model = eval(model.lower().replace(' ', '_'))()
+    except NameError:
+        st.error('Not Implemeted Error')
+        st.stop()
 
     placeholder = st.empty()
     with placeholder.beta_container():
@@ -141,11 +173,11 @@ def regression_app(model: str):
         canvas = st_canvas(
             stroke_width=10, stroke_color='blue', background_image=bg[0],
             drawing_mode='circle' if 'add' in action else 'transform',
-            update_streamlit=True, width=width, height=height, key='canvas')
+            update_streamlit=True, width=WIDTH, height=HEIGHT, key='canvas')
     dataset = [
         obj for obj in canvas.json_data['objects'] if obj['type'] == 'circle']
-    x_train = [2 * obj['left'] / width - 1 for obj in dataset]
-    y_train = [1 - 2 * obj['top'] / height for obj in dataset]
+    x_train = [2 * obj['left'] / WIDTH - 1 for obj in dataset]
+    y_train = [1 - 2 * obj['top'] / HEIGHT for obj in dataset]
     cache = get_cache()
     if ((cache['model'] != model)
             or (cache['x'] != x_train)
@@ -167,10 +199,62 @@ def regression_app(model: str):
         st.experimental_rerun()
 
 
+def classification_app(model: str):
+    action = st.sidebar.selectbox('Action:', (
+        'Click to add positive data points',
+        'Click to add negative data points',
+        'Double click to delete data points',
+    ))
+    try:
+        func = eval(model.lower().replace(' ', '_'))
+    except NameError:
+        st.error('Not Implemented Error')
+        st.stop()
+    model = func()
+    bg = get_background()
+    if bg[0] is None:
+        with RendererAgg.lock:
+            fig, ax = get_fig_ax()
+            bg[0] = figure_to_img(fig)
+            plt.clf()
+    canvas = st_canvas(
+        stroke_width=10,
+        stroke_color='yellow' if 'positive' in action else 'purple',
+        background_image=bg[0],
+        drawing_mode='circle' if 'add' in action else 'transform',
+        update_streamlit=True, width=WIDTH, height=HEIGHT, key='canvas')
+    dataset = [
+        obj for obj in canvas.json_data['objects'] if obj['type'] == 'circle']
+    x_train = [
+        [2 * obj['left'] / WIDTH - 1, 1 - 2 * obj['top'] / HEIGHT]
+        for obj in dataset]
+    y_train = [int(obj['stroke'] == 'yellow') for obj in dataset]
+    cache = get_cache()
+    if ((cache['model'] != model)
+            or (cache['x'] != x_train)
+            or (cache['y'] != y_train)):
+        cache['x'] = x_train
+        cache['y'] = y_train
+        cache['model'] = model
+        with RendererAgg.lock:
+            fig, ax = get_fig_ax()
+            if len(dataset) > 0:
+                model.fit(x_train, y_train)
+                cache['model'] = model
+                x = np.linspace(-1, 1, 100)
+                x1, x2 = np.meshgrid(x, x)
+                x = np.array([x1, x2]).reshape(2, -1).T
+                y = model.proba(x)
+                ax.contourf(x1, x2, y.reshape(100, 100), alpha=0.2)
+            bg[0] = figure_to_img(fig)
+            plt.clf()
+        st.experimental_rerun()
+
+
 if __name__ == "__main__":
     task = st.sidebar.selectbox('Select a task:', tuple(TASK_TO_MODELS.keys()))
     model = st.sidebar.selectbox('Select a model:', TASK_TO_MODELS[task])
     if model == '-':
         main_app()
-    elif task == 'Regression':
-        regression_app(model)
+    else:
+        eval(task.lower() + '_app')(model)
