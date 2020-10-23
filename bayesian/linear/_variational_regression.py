@@ -83,10 +83,11 @@ class VariationalRegression(Regression):
         bxy = self.beta * x.T @ y
         for _ in range(self.iter_max):
             b_prev = self.b
-            self.w_cov = np.linalg.inv(self.a * eye + self.beta * xx)
-            self.w_mean = self.w_cov @ bxy
+            self.w_precision = self.a * eye + self.beta * xx
+            self.w_mean = np.linalg.solve(self.w_precision, bxy)
             self.b = self.b0 + 0.5 * (
-                np.sum(self.w_mean ** 2) + np.trace(self.w_cov))
+                np.sum(self.w_mean ** 2) + np.trace(
+                    np.linalg.inv(self.w_precision)))
             if np.allclose(self.b, b_prev):
                 break
 
