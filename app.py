@@ -58,38 +58,37 @@ def get_cache():
     return {'x': None, 'y': None, 'model': None}
 
 
-def main_app():
-    st.sidebar.info('Select a task and a model above.')
-    st.title('Welcom to Bayesian model playground!')
-    st.markdown(
-        '**Select a task and a model from the dropdown on the left** '
-        'to play around with Bayesian models interactively!')
-
-
 def select_feature():
     st.sidebar.subheader('Feature')
     features = []
     if st.sidebar.checkbox('Bias', value=True):
         features.append(bs.preprocess.BiasFeature())
     if st.sidebar.checkbox('Gaussian', value=True):
-        num_locs = st.sidebar.slider('Number of Gaussian kernels', 1, 100, 10)
-        scale = st.sidebar.slider('Scale of Gaussian kernels', 0.01, 10., 1.)
+        num_locs = st.sidebar.slider('Number of Gaussian kernels', 1, 10, 5)
+        scales = list(map(lambda x: f'{x:.2E}', np.logspace(-1, 1, 100)))
+        scale = float(st.sidebar.select_slider(
+            'Scale of Gaussian kernels', scales, scales[50]))
         features.extend([
             bs.preprocess.GaussianFeature([loc], scale) for loc
             in np.linspace(-1, 1, 2 * num_locs + 1)[1::2]
         ])
     if st.sidebar.checkbox('Sigmoid', value=False):
-        num_locs = st.sidebar.slider('Number of sigmoid kernels', 1, 100, 10)
-        scale = st.sidebar.slider('Scale of sigmoid kernels', 0.01, 10., 1.)
+        num_locs = st.sidebar.slider('Number of sigmoid kernels', 1, 10, 5)
+        scales = list(map(lambda x: f'{x:.2E}', np.logspace(0, 1, 100)))
+        scale = float(st.sidebar.select_slider(
+            'Scale of sigmoid kernels', scales, scales[50]))
         features.extend([
             bs.preprocess.SigmoidalFeature([loc], scale) for loc
             in np.linspace(-1, 1, 2 * num_locs + 1)[1::2]
         ])
     if st.sidebar.checkbox('Polynomial', value=False):
         degrees = st.sidebar.multiselect(
-            'Degrees', [f'x^{i}' for i in range(1, 10)], default=['x^1'])
+            'Degrees', list(range(1, 10)), default=list(range(1, 10)))
         features.extend([
-            bs.preprocess.PolynomialFeature(int(deg[2])) for deg in degrees])
+            bs.preprocess.PolynomialFeature(deg) for deg in degrees])
+    if len(features) == 0:
+        st.sidebar.error('Select at least one feature')
+        st.stop()
     return bs.preprocess.StackedFeatures(*features)
 
 
@@ -99,8 +98,10 @@ def select_feature_for_classification():
     if st.sidebar.checkbox('Bias', value=True):
         features.append(bs.preprocess.BiasFeature())
     if st.sidebar.checkbox('Gaussian', value=True):
-        n = st.sidebar.slider('Number of Gaussian kernels per axis', 1, 20, 10)
-        scale = st.sidebar.slider('Scale of Gaussian kernels', 0.01, 10., 1.)
+        n = st.sidebar.slider('Number of Gaussian kernels per axis', 1, 10, 5)
+        scales = list(map(lambda x: f'{x:.2E}', np.logspace(-1, 1, 100)))
+        scale = float(st.sidebar.select_slider(
+            'Scale of Gaussian kernels', scales, scales[50]))
         features.extend([
             bs.preprocess.GaussianFeature([x1, x2], scale) for x1, x2
             in product(
@@ -109,11 +110,12 @@ def select_feature_for_classification():
         ])
     if st.sidebar.checkbox('Polynomial', value=False):
         degrees = st.sidebar.multiselect(
-            'Degrees', [f'x^{i}' for i in range(1, 10)], default=['x^1'])
+            'Degrees', list(range(1, 10)), default=list(range(1, 10)))
         features.extend([
-            bs.preprocess.PolynomialFeature(int(deg[2])) for deg in degrees])
+            bs.preprocess.PolynomialFeature(deg) for deg in degrees])
     if len(features) == 0:
         st.sidebar.error('Select at least one feature')
+        st.stop()
     return bs.preprocess.StackedFeatures(*features)
 
 
@@ -121,11 +123,11 @@ def bayesian_linear_regression():
     st.markdown(bs.linear.Regression.__doc__)
     feature = select_feature()
     st.sidebar.subheader('Hyperparameters')
-    alphas = np.logspace(-5, 0, 100).tolist()
-    betas = np.logspace(-1, 4, 100).tolist()
+    alphas = list(map(lambda x: f'{x:.2E}', np.logspace(-6, 1, 100)))
+    betas = list(map(lambda x: f'{x:.2E}', np.logspace(-1, 4, 100)))
     return bs.linear.Regression(
-        alpha=st.sidebar.select_slider('alpha', alphas, alphas[50]),
-        beta=st.sidebar.select_slider('beta', betas, betas[50]),
+        alpha=float(st.sidebar.select_slider('alpha', alphas, alphas[50])),
+        beta=float(st.sidebar.select_slider('beta', betas, betas[50])),
         feature=feature)
 
 
@@ -133,22 +135,22 @@ def variational_bayesian_linear_regression():
     st.markdown(bs.linear.VariationalRegression.__doc__)
     feature = select_feature()
     st.sidebar.subheader('Hyperparameters')
-    a0s = np.logspace(-3, 2, 100).tolist()
-    b0s = np.logspace(-3, 2, 100).tolist()
-    betas = np.logspace(-1, 4, 100).tolist()
+    a0s = list(map(lambda x: f'{x:.2E}', np.logspace(-6, 1, 100)))
+    b0s = list(map(lambda x: f'{x:.2E}', np.logspace(-6, 1, 100)))
+    betas = list(map(lambda x: f'{x:.2E}', np.logspace(-1, 4, 100)))
     return bs.linear.VariationalRegression(
-        a0=st.sidebar.select_slider('a0', a0s, a0s[50]),
-        b0=st.sidebar.select_slider('b0', b0s, b0s[50]),
-        beta=st.sidebar.select_slider('beta', betas, betas[50]),
+        a0=float(st.sidebar.select_slider('a0', a0s, a0s[50])),
+        b0=float(st.sidebar.select_slider('b0', b0s, b0s[50])),
+        beta=float(st.sidebar.select_slider('beta', betas, betas[50])),
         feature=feature)
 
 
 def bayesian_logistic_regression():
     st.markdown(bs.linear.Classifier.__doc__)
     feature = select_feature_for_classification()
-    alphas = np.logspace(-5, 0, 100).tolist()
+    alphas = list(map(lambda x: f'{x:.2E}', np.logspace(-6, 2, 100)))
     return bs.linear.Classifier(
-        alpha=st.sidebar.select_slider('alpha', alphas, alphas[50]),
+        alpha=float(st.sidebar.select_slider('alpha', alphas, alphas[50])),
         feature=feature)
 
 
@@ -255,6 +257,10 @@ if __name__ == "__main__":
     task = st.sidebar.selectbox('Select a task:', tuple(TASK_TO_MODELS.keys()))
     model = st.sidebar.selectbox('Select a model:', TASK_TO_MODELS[task])
     if model == '-':
-        main_app()
+        st.sidebar.info('Select a task and a model above.')
+        st.title('Welcom to Bayesian model playground!')
+        st.markdown(
+            '**Select a task and a model from the dropdown on the left** '
+            'to play around with Bayesian models interactively!')
     else:
         eval(task.lower() + '_app')(model)
