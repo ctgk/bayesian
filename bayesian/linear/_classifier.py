@@ -70,13 +70,30 @@ class Classifier(Model):
     def _sigmoid(a):
         return np.tanh(a * 0.5) * 0.5 + 0.5
 
+    def _log_prior(self, w):
+        return 0.5 * (
+            np.log(self.alpha)
+            - self.alpha * np.square(w).sum()
+            - np.log(2 * np.pi))
+
+    @staticmethod
+    def _log_likelihood(labels, logits):
+        return np.sum(
+            labels * logits
+            - np.maximum(logits, 0)
+            - np.log1p(np.exp(-np.abs(logits)))
+        )
+
+    def _log_posterior(self, x, y, w):
+        return self._log_likelihood(y, x @ w) + self._log_prior(w)
+
     def fit(self, x, y, iter_max: int = 100):
         x = self._preprocess(x)
         y = np.asarray(y)
         w = np.zeros((np.size(x, 1)))
         eye = np.eye(np.size(x, 1))
+        score = -np.inf
         for _ in range(iter_max):
-            w_prev = np.copy(w)
             p = self._sigmoid(x @ w)
             grad = x.T @ (p - y) + self.alpha * w
             hessian = (x.T * p * (1 - p)) @ x + self.alpha * eye
@@ -84,8 +101,11 @@ class Classifier(Model):
                 w -= np.linalg.solve(hessian, grad)
             except np.linalg.LinAlgError:
                 break
-            if np.allclose(w, w_prev):
+            score_current = self._log_posterior(x, y, w)
+            assert score_current > score
+            if score_current - score > 1e-7:
                 break
+            score = score_current
         self.w_mean = w
         self.w_precision = hessian
 
