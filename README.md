@@ -2,12 +2,14 @@
 
 Collection of Bayesian inference methods
 
-# Running App
+# App
 
 ```
 $ pip install git+https://github.com/ctgk/bayesian#egg=bayesian[app]
 $ streamlit run https://raw.githubusercontent.com/ctgk/bayesian/master/app.py
 ```
+
+or go to <https://share.streamlit.io/ctgk/bayesian/app.py>
 
 # Contributing
 
