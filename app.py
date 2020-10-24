@@ -142,16 +142,24 @@ def bayesian_logistic_regression(feature):
 
 
 def get_xy_from_canvas(stroke_color: str, action: str, for_regression: bool):
-    canvas = st_canvas(
-        stroke_width=10, stroke_color=stroke_color, width=WIDTH, height=HEIGHT,
-        background_image=get_background(), update_streamlit=True, key='canvas',
-        drawing_mode='circle' if 'add' in action.lower() else 'transform')
+    col1, col2 = st.beta_columns([2, 1])
+    with col1:
+        canvas = st_canvas(
+            stroke_width=10, stroke_color=stroke_color, update_streamlit=True,
+            background_image=get_background(),
+            drawing_mode='circle' if 'add' in action.lower() else 'transform',
+            width=WIDTH, height=HEIGHT, key='canvas')
     points = [p for p in canvas.json_data['objects'] if p['type'] == 'circle']
     x_train = [2 * p['left'] / WIDTH - 1 for p in points]
     y_train = [1 - 2 * p['top'] / HEIGHT for p in points]
     if not for_regression:
         x_train = [[x, y] for x, y in zip(x_train, y_train)]
         y_train = [int(p['stroke'] == 'yellow') for p in points]
+    with col2:
+        st.dataframe(dict(
+            **({'x1': [x[0] for x in x_train], 'x2': [x[1] for x in x_train]}
+                if not for_regression else {'x': x_train}),
+            **{'y': y_train}))
     return x_train, y_train
 
 
