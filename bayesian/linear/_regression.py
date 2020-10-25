@@ -5,8 +5,6 @@ from bayesian._model import Model
 
 class Regression(Model):
     r"""
-    # Bayesian Linear Regression
-
     ### Prior disribution of model parameter
 
     $$

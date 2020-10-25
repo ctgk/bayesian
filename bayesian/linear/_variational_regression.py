@@ -5,8 +5,6 @@ from bayesian.linear._regression import Regression
 
 class VariationalRegression(Regression):
     r"""
-    # Variational Bayesian Linear Regression
-
     ### Prior distribution of model parameter
 
     $$

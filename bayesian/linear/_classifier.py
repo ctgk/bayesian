@@ -5,8 +5,6 @@ from bayesian._model import Model
 
 class Classifier(Model):
     r"""
-    # Bayesian Logistic Regression
-
     ### Prior distribution of model parameter
 
     $$
