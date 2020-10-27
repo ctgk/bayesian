@@ -5,9 +5,12 @@ import numpy as np
 
 class Model(abc.ABC):
 
-    @abc.abstractmethod
-    def __eq__(self, other):
-        pass
+    def __eq__(self, other: object):
+        if type(self) != type(other):
+            return False
+        return (self.hyperparameters == other.hyperparameters) and (
+            self.feature == other.feature
+        )
 
     @property
     @abc.abstractmethod

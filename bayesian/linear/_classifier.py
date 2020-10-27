@@ -59,12 +59,6 @@ class Classifier(Model):
         self.alpha = alpha
         self.feature = feature
 
-    def __eq__(self, other):
-        if type(self) != type(other):
-            return False
-        return (self.hyperparameters == other.hyperparameters) and (
-            self.feature == other.feature)
-
     @staticmethod
     def _sigmoid(a):
         return np.tanh(a * 0.5) * 0.5 + 0.5

@@ -56,12 +56,6 @@ class Regression(Model):
         self.beta = beta
         self.feature = feature
 
-    def __eq__(self, other):
-        if not isinstance(other, Regression):
-            return False
-        return (self.hyperparameters == other.hyperparameters) and (
-            self.feature == other.feature)
-
     @property
     def hyperparameters(self):
         return (self.alpha, self.beta)
