@@ -9,6 +9,11 @@ class Model(abc.ABC):
     def __eq__(self, other):
         pass
 
+    @property
+    @abc.abstractmethod
+    def hyperparameters(self):
+        pass
+
     def _preprocess(self, x):
         if self.feature is None:
             x = np.asarray(x)

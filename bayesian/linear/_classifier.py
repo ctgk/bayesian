@@ -58,7 +58,6 @@ class Classifier(Model):
         super().__init__()
         self.alpha = alpha
         self.feature = feature
-        self.hyperparameters = (alpha,)
 
     def __eq__(self, other):
         if type(self) != type(other):
@@ -86,6 +85,10 @@ class Classifier(Model):
 
     def _log_posterior(self, x, y, w):
         return self._log_likelihood(y, x @ w) + self._log_prior(w)
+
+    @property
+    def hyperparameters(self):
+        return (self.alpha,)
 
     def fit(self, x, y, iter_max: int = 100):
         x = self._preprocess(x)
