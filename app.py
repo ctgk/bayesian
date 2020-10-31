@@ -208,8 +208,10 @@ def classification(model):
                 x = np.linspace(-1, 1, 100)
                 x1, x2 = np.meshgrid(x, x)
                 x = np.array([x1, x2]).reshape(2, -1).T
-                y = model.proba(x)
-                ax.contourf(x1, x2, y.reshape(100, 100), alpha=0.2)
+                y = model.proba(x).reshape(100, 100)
+                ax.contourf(x1, x2, y, alpha=0.2)
+                ax.clabel(
+                    ax.contour(x1, x2, y, linestyles='dotted'), colors='black')
             cache['bg'] = figure_to_img(fig)
             plt.clf()
         st.experimental_rerun()
