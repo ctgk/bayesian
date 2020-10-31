@@ -11,7 +11,7 @@ repos:
     -   id: mixed-line-ending
         args: ['--fix', 'lf']
     -   id: no-commit-to-branch
-        args: ['--branch', 'master']
+        args: ['--branch', 'main']
 -   repo: local
     hooks:
     -   id: flake8
