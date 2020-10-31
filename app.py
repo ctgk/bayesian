@@ -23,6 +23,7 @@ TASK_TO_MODELS = {
     'Classification': (
         '-',
         'Bayesian Logistic Regression',
+        'Variational Bayesian Logistic Regression',
     )
 }
 
@@ -133,8 +134,12 @@ def variational_bayesian_linear_regression(feature):
 
 
 def bayesian_logistic_regression(feature):
-    return bs.linear.Classifier(
-        alpha=logspace_slider('alpha', -6, 2), feature=feature)
+    return bs.linear.Classifier(logspace_slider('alpha', -6, 2), feature)
+
+
+def variational_bayesian_logistic_regression(feature):
+    return bs.linear.VariationalClassifier(
+        logspace_slider('a0', -6, 2), logspace_slider('b0', -4, 4), feature)
 
 
 def get_xy_from_canvas(stroke_color: str, action: str, for_regression: bool):
