@@ -30,7 +30,7 @@ setup(
 
     packages=find_packages(
         exclude=('tests', 'tests.*'), include=('bayesian', 'bayesian.*')),
-    python_requires='>=3',
+    python_requires='>=3.7',
     install_requires=install_requires,
     extras_require={
         'app': app_requires,
