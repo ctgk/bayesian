@@ -61,24 +61,27 @@ def get_background():
     return cache['bg']
 
 
+def logspace_slider(
+        label: str, low: float, high: float,
+        num: int = 100, default_index=50) -> float:
+    list_ = list(map(lambda x: f'{x:.2E}', np.logspace(low, high, num)))
+    return float(st.select_slider(label, list_, list_[default_index]))
+
+
 def features_for_regression():
     features = []
     if st.checkbox('Bias', value=True):
         features.append(bs.preprocess.BiasFeature())
     if st.checkbox('Gaussian', value=True):
         num_locs = st.slider('Number of Gaussian kernels', 1, 10, 5)
-        scales = list(map(lambda x: f'{x:.2E}', np.logspace(-1, 1, 100)))
-        scale = float(st.select_slider(
-            'Scale of Gaussian kernels', scales, scales[50]))
+        scale = logspace_slider('Scale of Gaussian kernels', -1, 1)
         features.extend([
             bs.preprocess.GaussianFeature([loc], scale) for loc
             in np.linspace(-1, 1, 2 * num_locs + 1)[1::2]
         ])
     if st.checkbox('Sigmoid', value=False):
         num_locs = st.slider('Number of sigmoid kernels', 1, 10, 5)
-        scales = list(map(lambda x: f'{x:.2E}', np.logspace(0, 1, 100)))
-        scale = float(st.select_slider(
-            'Scale of sigmoid kernels', scales, scales[50]))
+        scale = logspace_slider('Scale of sigmoid kernels', 0, 1)
         features.extend([
             bs.preprocess.SigmoidalFeature([loc], scale) for loc
             in np.linspace(-1, 1, 2 * num_locs + 1)[1::2]
@@ -97,9 +100,7 @@ def features_for_classification():
         features.append(bs.preprocess.BiasFeature())
     if st.checkbox('Gaussian', value=True):
         n = st.slider('Number of Gaussian kernels per axis', 1, 10, 5)
-        scales = list(map(lambda x: f'{x:.2E}', np.logspace(-1, 1, 100)))
-        scale = float(st.select_slider(
-            'Scale of Gaussian kernels', scales, scales[50]))
+        scale = logspace_slider('Scale of Gaussian kernels', -1, 1)
         features.extend([
             bs.preprocess.GaussianFeature([x1, x2], scale) for x1, x2
             in product(
@@ -115,30 +116,25 @@ def features_for_classification():
 
 
 def bayesian_linear_regression(feature):
-    alphas = list(map(lambda x: f'{x:.2E}', np.logspace(-6, 1, 100)))
-    betas = list(map(lambda x: f'{x:.2E}', np.logspace(-1, 4, 100)))
     return bs.linear.Regression(
-        alpha=float(st.select_slider('alpha', alphas, alphas[50])),
-        beta=float(st.select_slider('beta', betas, betas[50])),
-        feature=feature)
+        alpha=logspace_slider('alpha', -6, 1),
+        beta=logspace_slider('beta', -1, 4),
+        feature=feature
+    )
 
 
 def variational_bayesian_linear_regression(feature):
-    a0s = list(map(lambda x: f'{x:.2E}', np.logspace(-6, 1, 100)))
-    b0s = list(map(lambda x: f'{x:.2E}', np.logspace(-6, 1, 100)))
-    betas = list(map(lambda x: f'{x:.2E}', np.logspace(-1, 4, 100)))
     return bs.linear.VariationalRegression(
-        a0=float(st.select_slider('a0', a0s, a0s[50])),
-        b0=float(st.select_slider('b0', b0s, b0s[50])),
-        beta=float(st.select_slider('beta', betas, betas[50])),
-        feature=feature)
+        a0=logspace_slider('a0', -6, 1),
+        b0=logspace_slider('b0', -6, 1),
+        beta=logspace_slider('beta', -1, 4),
+        feature=feature
+    )
 
 
 def bayesian_logistic_regression(feature):
-    alphas = list(map(lambda x: f'{x:.2E}', np.logspace(-6, 2, 100)))
     return bs.linear.Classifier(
-        alpha=float(st.select_slider('alpha', alphas, alphas[50])),
-        feature=feature)
+        alpha=logspace_slider('alpha', -6, 2), feature=feature)
 
 
 def get_xy_from_canvas(stroke_color: str, action: str, for_regression: bool):

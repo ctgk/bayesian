@@ -55,13 +55,10 @@ class Regression(Model):
         self.alpha = alpha
         self.beta = beta
         self.feature = feature
-        self.hyperparameters = [alpha, beta]
 
-    def __eq__(self, other):
-        if not isinstance(other, Regression):
-            return False
-        return (self.hyperparameters == other.hyperparameters) and (
-            self.feature == other.feature)
+    @property
+    def hyperparameters(self):
+        return (self.alpha, self.beta)
 
     def fit(self, x, y):
         x = self._preprocess(x)

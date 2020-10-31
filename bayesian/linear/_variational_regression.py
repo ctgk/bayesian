@@ -63,13 +63,10 @@ class VariationalRegression(Regression):
         self.beta = beta
         self.iter_max = iter_max
         self.feature = feature
-        self.hyperparameters = [a0, b0, beta]
 
-    def __eq__(self, other):
-        if not isinstance(other, VariationalRegression):
-            return False
-        return (self.hyperparameters == other.hyperparameters) and (
-            self.feature == other.feature)
+    @property
+    def hyperparameters(self):
+        return (self.a0, self.b0, self.beta)
 
     def fit(self, x, y):
         x = self._preprocess(x)

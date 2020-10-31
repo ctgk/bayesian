@@ -5,8 +5,16 @@ import numpy as np
 
 class Model(abc.ABC):
 
+    def __eq__(self, other: object):
+        if type(self) != type(other):
+            return False
+        return (self.hyperparameters == other.hyperparameters) and (
+            self.feature == other.feature
+        )
+
+    @property
     @abc.abstractmethod
-    def __eq__(self, other):
+    def hyperparameters(self):
         pass
 
     def _preprocess(self, x):
